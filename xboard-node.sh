@@ -2,7 +2,7 @@
 #!/usr/bin/env bash
 # Xboard-Node 安装与管理脚本
 # 安装后使用：xboardnode
-# 适用：Debian 11/12、Ubuntu
+# 适用：Debian、Ubuntu
 # 依赖：Docker Engine、Docker Compose V2、Python3
 
 set -Eeuo pipefail
