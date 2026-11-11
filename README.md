@@ -41,6 +41,37 @@ curl -fsSL https://raw.githubusercontent.com/cedar2025/xboard-node/dev/install.s
 # Machine mode
 curl -fsSL https://raw.githubusercontent.com/cedar2025/xboard-node/dev/install.sh | \
   sudo bash -s -- --mode machine --panel https://panel.example.com --token TOKEN --machine-id 1
+```
+
+## Xboard-Node Management Script
+
+An interactive management script for easy deployment and maintenance of Xboard-Node.
+
+Features include installation, configuration, startup, shutdown, restart, log viewing, Docker image updates, and uninstallation.
+
+### Download and Run
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/xboardnode.sh -o /root/xboardnode.sh
+
+chmod +x /root/xboardnode.sh
+
+/root/xboardnode.sh
+```
+
+### Run Again
+
+```bash
+/root/xboardnode.sh
+```
+
+### Update the Management Script
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/xboardnode.sh -o /root/xboardnode.sh
+
+chmod +x /root/xboardnode.sh
+```
 
 ## xbctl
 
