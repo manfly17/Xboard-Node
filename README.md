@@ -14,35 +14,6 @@ Node backend for [Xboard](https://github.com/cedar2025/Xboard). Supports `sing-b
 
 ## Install
 
-### Docker
-
-```bash
-docker run -d --restart=always --network=host \
-  -e apiHost=https://panel.com -e apiKey=TOKEN -e nodeID=1 \
-  ghcr.io/cedar2025/xboard-node:latest
-```
-
-### Docker Compose
-
-```bash
-git clone -b compose --depth 1 https://github.com/cedar2025/xboard-node.git
-cd xboard-node
-vim config/config.yml   # set panel.url / token / node_id
-docker compose up -d
-```
-
-### Installer (Linux systemd)
-
-```bash
-# Node mode
-curl -fsSL https://raw.githubusercontent.com/cedar2025/xboard-node/dev/install.sh | \
-  sudo bash -s -- --mode node --panel https://panel.example.com --token TOKEN --node-id 1
-
-# Machine mode
-curl -fsSL https://raw.githubusercontent.com/cedar2025/xboard-node/dev/install.sh | \
-  sudo bash -s -- --mode machine --panel https://panel.example.com --token TOKEN --machine-id 1
-```
-
 ## Xboard-Node Management Script
 
 An interactive management script for easy deployment and maintenance of Xboard-Node.
@@ -71,6 +42,35 @@ chmod +x /root/xboardnode.sh
 curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/xboardnode.sh -o /root/xboardnode.sh
 
 chmod +x /root/xboardnode.sh
+```
+
+### Docker
+
+```bash
+docker run -d --restart=always --network=host \
+  -e apiHost=https://panel.com -e apiKey=TOKEN -e nodeID=1 \
+  ghcr.io/cedar2025/xboard-node:latest
+```
+
+### Docker Compose
+
+```bash
+git clone -b compose --depth 1 https://github.com/cedar2025/xboard-node.git
+cd xboard-node
+vim config/config.yml   # set panel.url / token / node_id
+docker compose up -d
+```
+
+### Installer (Linux systemd)
+
+```bash
+# Node mode
+curl -fsSL https://raw.githubusercontent.com/cedar2025/xboard-node/dev/install.sh | \
+  sudo bash -s -- --mode node --panel https://panel.example.com --token TOKEN --node-id 1
+
+# Machine mode
+curl -fsSL https://raw.githubusercontent.com/cedar2025/xboard-node/dev/install.sh | \
+  sudo bash -s -- --mode machine --panel https://panel.example.com --token TOKEN --machine-id 1
 ```
 
 ## xbctl
