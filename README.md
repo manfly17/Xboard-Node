@@ -23,16 +23,17 @@ Features include installation, configuration, startup, shutdown, restart, log vi
 ### Download and Run
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/xboardnode.sh -o /root/xboardnode.sh && \
-chmod +x /root/xboardnode.sh && \
-ln -sfn /root/xboardnode.sh /usr/local/bin/xboardnode
-/root/xboardnode.sh
+curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/xboard-node.sh \
+  -o /root/xboard-node.sh && \
+chmod +x /root/xboard-node.sh && \
+ln -sfn /root/xboard-node.sh /usr/local/bin/xbnode
+/root/xboard-node.sh
 ```
 
 ### Run Again
 
 ```bash
-xboardnode
+xbnode
 ```
 
 ### Docker
