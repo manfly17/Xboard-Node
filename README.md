@@ -23,10 +23,9 @@ Features include installation, configuration, startup, shutdown, restart, log vi
 ### Download and Run
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/xboardnode.sh -o /root/xboardnode.sh
-
-chmod +x /root/xboardnode.sh
-
+curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/xboardnode.sh -o /root/xboardnode.sh && \
+chmod +x /root/xboardnode.sh && \
+ln -sfn /root/xboardnode.sh /usr/local/bin/xboardnode
 /root/xboardnode.sh
 ```
 
