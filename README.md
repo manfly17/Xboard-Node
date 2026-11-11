@@ -27,7 +27,7 @@ curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev
   -o /root/xboard-node.sh && \
 chmod +x /root/xboard-node.sh && \
 ln -sfn /root/xboard-node.sh /usr/local/bin/xbnode
-/root/xboard-node.sh
+/root/xboard-node.sh install
 ```
 
 ### Run Again
