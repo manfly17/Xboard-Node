@@ -14,11 +14,22 @@ Node backend for [Xboard](https://github.com/cedar2025/Xboard). Supports `sing-b
 
 ## Install
 
+### System Dependencies Installer
+
+A standalone system dependency installation script for preparing the Linux environment.
+
+#### Download and Run
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/install-deps.sh \
+  -o /root/install-deps.sh &&
+chmod +x /root/install-deps.sh &&
+bash /root/install-deps.sh
+```
+
 ## Xboard-Node Management Script
 
 An interactive management script for easy deployment and maintenance of Xboard-Node.
-
-Features include installation, configuration, startup, shutdown, restart, log viewing, Docker image updates, and uninstallation.
 
 ### Download and Run
 
