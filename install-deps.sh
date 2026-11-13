@@ -103,10 +103,55 @@ is_systemd() {
     [[ "$(ps -p 1 -o comm= 2>/dev/null | tr -d ' ')" == "systemd" ]]
 }
 
+# Debian 11 使用独立 APT 源，不修改系统原有软件源
+APT_OPTIONS=()
+APT_TEMP_DIR=""
+
+setup_debian11_archive_sources() {
+    APT_TEMP_DIR="$(mktemp -d /var/tmp/xboard-apt.XXXXXX)"
+
+    mkdir -p "$APT_TEMP_DIR/lists/partial"
+
+    # 允许 APT 的 _apt 用户访问临时目录
+    chmod 0755 "$APT_TEMP_DIR" "$APT_TEMP_DIR/lists"
+
+    if id _apt >/dev/null 2>&1; then
+        chown _apt:root "$APT_TEMP_DIR/lists/partial"
+        chmod 0700 "$APT_TEMP_DIR/lists/partial"
+    else
+        die "系统不存在 APT 沙箱用户 _apt。"
+    fi
+
+    cat > "$APT_TEMP_DIR/sources.list" <<'EOF'
+deb https://archive.debian.org/debian bullseye main contrib non-free
+deb https://archive.debian.org/debian-security bullseye-security main contrib non-free
+EOF
+    chmod 0644 "$APT_TEMP_DIR/sources.list"
+
+    APT_OPTIONS=(
+        -o "Dir::Etc::sourcelist=$APT_TEMP_DIR/sources.list"
+        -o "Dir::Etc::sourceparts=-"
+        -o "Dir::State::lists=$APT_TEMP_DIR/lists"
+        -o "Acquire::Check-Valid-Until=false"
+        -o "APT::Get::AllowUnauthenticated=false"
+        -o "Acquire::AllowInsecureRepositories=false"
+    )
+
+    info "Debian 11 已启用官方归档源，本次运行不修改系统原有软件源。"
+}
+
+cleanup_apt_temp() {
+    if [[ -n "${APT_TEMP_DIR:-}" && -d "$APT_TEMP_DIR" ]]; then
+        rm -rf -- "$APT_TEMP_DIR"
+    fi
+}
+
+trap cleanup_apt_temp EXIT
+
 apt_update() {
     info "更新 APT 软件包索引……"
 
-    if ! apt-get update; then
+    if ! apt-get "${APT_OPTIONS[@]}" update; then
         die "APT 软件包索引更新失败，请检查软件源及网络。"
     fi
 
@@ -128,7 +173,7 @@ check_apt_plan() {
     info "检查软件包安装计划……"
 
     if ! simulation="$(
-        apt-get -s \
+        apt-get "${APT_OPTIONS[@]}" -s \
             --no-upgrade \
             --no-install-recommends \
             install "$@"
@@ -185,7 +230,7 @@ apt_install_safe() {
 
     printf '  - %s\n' "${packages[@]}"
 
-    apt-get \
+    apt-get "${APT_OPTIONS[@]}" \
         --no-upgrade \
         --no-install-recommends \
         install -y "${packages[@]}"
@@ -275,7 +320,8 @@ if ! command_exists apt-get || ! command_exists dpkg-query; then
 fi
 
 if [[ "$OS_ID" == "debian" && "$OS_VERSION" == "11" ]]; then
-    warn "Debian 11 已结束 LTS 支持，部分软件源可能无法正常提供软件包。"
+    warn "Debian 11 已结束 LTS 支持，使用官方归档源。"
+    setup_debian11_archive_sources
 fi
 
 # ============================================================
@@ -438,6 +484,19 @@ configure_docker_repository() {
 
         ok "Docker GPG 公钥已存在，跳过。"
 
+    fi
+
+    # Debian 11 使用隔离 APT 源，Docker 官方源也加入临时列表
+    if [[ -n "${APT_TEMP_DIR:-}" ]]; then
+        local docker_source_line
+        docker_source_line="deb [arch=${ARCH} signed-by=${DOCKER_KEYRING}] https://download.docker.com/linux/${OS_ID} ${OS_CODENAME} stable"
+
+        if ! grep -Fq "download.docker.com/linux/${OS_ID}" "$APT_TEMP_DIR/sources.list"; then
+            printf '%s\n' "$docker_source_line" >> "$APT_TEMP_DIR/sources.list"
+        fi
+
+        ok "Docker 官方源已加入本次运行的临时 APT 源。"
+        return 0
     fi
 
     # 检查是否已经配置 Docker 官方仓库
@@ -614,7 +673,7 @@ else
         apt_update
 
         COMPOSE_CANDIDATE="$(
-            apt-cache policy docker-compose-v2 2>/dev/null |
+            apt-cache "${APT_OPTIONS[@]}" policy docker-compose-v2 2>/dev/null |
             awk '/Candidate:/ {print $2; exit}'
         )"
 
