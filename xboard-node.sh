@@ -1656,10 +1656,12 @@ case "${1:-menu}" in
         fi
 
         echo
-        read -r -p "是否立即启动 Xboard-Node？[y/N]: " start_confirm
+        read -r -p "是否立即启动 Xboard-Node？[Y/n]: " start_confirm
 
-        if [[ "$start_confirm" =~ ^[Yy]$ ]]; then
+        if [[ ! "$start_confirm" =~ ^[Nn]$ ]]; then
             start_node
+        else
+            yellow "已跳过启动，稍后可在管理菜单中手动启动。"
         fi
         ;;
 
