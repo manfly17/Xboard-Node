@@ -1143,39 +1143,123 @@ PYK
 
     echo
 
-    if [[ "$CUSTOM_DNS_ENABLED" == "yes" ]]; then
-        blue "正在普通重启 Xboard-Node，使新的 DNS 配置生效……"
+    local expected_dns_source actual_dns_mount container_exists
 
-        compose restart "$SERVICE" || {
-            red "DNS 文件已更新，但容器重启失败。"
+    expected_dns_source="$(realpath -m "$PROJECT_DIR/sing_origin.json")"
+    actual_dns_mount=""
+    container_exists="no"
+
+    if docker inspect "$CONTAINER" >/dev/null 2>&1; then
+        container_exists="yes"
+        actual_dns_mount="$(docker inspect --format \
+            '{{range .Mounts}}{{if eq .Destination "/etc/xboard-node/sing_origin.json"}}{{.Type}}|{{.Source}}{{end}}{{end}}' \
+            "$CONTAINER" 2>/dev/null || true)"
+    fi
+
+    echo "========== Docker DNS 挂载状态 =========="
+    echo "容器是否存在：$container_exists"
+    echo "当前 DNS 挂载：${actual_dns_mount:-无}"
+    echo "目标 DNS 文件：$expected_dns_source"
+    echo
+
+    if [[ "$CUSTOM_DNS_ENABLED" == "yes" ]]; then
+
+        [[ -s "$PROJECT_DIR/sing_origin.json" ]] || {
+            red "DNS 文件不存在或为空，停止操作。"
             return 1
         }
+
+        if [[ "$actual_dns_mount" == "bind|$expected_dns_source" ]]; then
+            blue "检测到容器已经挂载正确的 DNS 文件。"
+            blue "本次仅更新 DNS 内容，执行普通重启……"
+
+            compose restart "$SERVICE" || {
+                red "DNS 文件已更新，但容器普通重启失败。"
+                return 1
+            }
+        else
+            yellow "检测到容器 DNS 挂载与目标配置不一致。"
+            yellow "需要强制重建容器，使新的 DNS 文件挂载生效……"
+
+            compose up -d --force-recreate "$SERVICE" || {
+                red "DNS 配置已更新，但容器强制重建失败。"
+                return 1
+            }
+        fi
 
         sleep 2
 
         if ! docker inspect --format '{{.State.Running}}' "$CONTAINER" 2>/dev/null | grep -qx true; then
-            red "容器重启后未正常运行，请检查容器日志。"
+            red "容器未正常运行，请检查 docker logs $CONTAINER"
+            return 1
+        fi
+
+        actual_dns_mount="$(docker inspect --format \
+            '{{range .Mounts}}{{if eq .Destination "/etc/xboard-node/sing_origin.json"}}{{.Type}}|{{.Source}}{{end}}{{end}}' \
+            "$CONTAINER" 2>/dev/null || true)"
+
+        if [[ "$actual_dns_mount" != "bind|$expected_dns_source" ]]; then
+            red "容器重启后 DNS 挂载验证失败。"
+            red "实际挂载：${actual_dns_mount:-无}"
             return 1
         fi
 
         if ! docker exec "$CONTAINER" cat /etc/xboard-node/sing_origin.json | cmp -s "$PROJECT_DIR/sing_origin.json" -; then
-            red "容器内 DNS 文件与宿主机不一致，请检查 Docker 挂载。"
+            red "容器内 DNS 文件与宿主机不一致。"
             return 1
         fi
 
-        green "DNS 配置更新成功，容器普通重启成功。"
+        green "DNS 配置更新成功！"
+        green "容器运行正常，DNS 挂载正确，文件内容一致。"
         echo "当前 DNS 配置："
         cat "$PROJECT_DIR/sing_origin.json"
 
     else
-        yellow "正在关闭自定义 DNS，需要重建容器以移除旧挂载……"
 
-        compose up -d --force-recreate "$SERVICE" || {
-            red "自定义 DNS 已关闭，但容器重建失败。"
+        if [[ -n "$actual_dns_mount" ]]; then
+            yellow "检测到容器仍然挂载旧 DNS 文件。"
+            yellow "正在强制重建容器，移除旧挂载……"
+
+            compose up -d --force-recreate "$SERVICE" || {
+                red "自定义 DNS 已关闭，但容器重建失败。"
+                return 1
+            }
+        elif [[ "$container_exists" == "yes" ]]; then
+            blue "容器已经没有 DNS 文件挂载。"
+            blue "仅需普通重启，使关闭 DNS 后的新配置生效……"
+
+            compose restart "$SERVICE" || {
+                red "容器普通重启失败。"
+                return 1
+            }
+        else
+            yellow "容器尚不存在，正在按关闭 DNS 的配置创建容器……"
+
+            compose up -d "$SERVICE" || {
+                red "容器创建失败。"
+                return 1
+            }
+        fi
+
+        sleep 2
+
+        if ! docker inspect --format '{{.State.Running}}' "$CONTAINER" 2>/dev/null | grep -qx true; then
+            red "容器未正常运行，请检查 docker logs $CONTAINER"
             return 1
-        }
+        fi
 
-        green "自定义 DNS 已关闭，容器重建成功。"
+        actual_dns_mount="$(docker inspect --format \
+            '{{range .Mounts}}{{if eq .Destination "/etc/xboard-node/sing_origin.json"}}{{.Type}}|{{.Source}}{{end}}{{end}}' \
+            "$CONTAINER" 2>/dev/null || true)"
+
+        if [[ -n "$actual_dns_mount" ]]; then
+            red "DNS 已关闭，但容器仍然存在 DNS 文件挂载！"
+            red "实际挂载：$actual_dns_mount"
+            return 1
+        fi
+
+        green "自定义 DNS 已关闭。"
+        green "容器运行正常，旧 DNS 文件挂载已移除。"
     fi
 
     return 0
@@ -1656,12 +1740,10 @@ case "${1:-menu}" in
         fi
 
         echo
-        read -r -p "是否立即启动 Xboard-Node？[Y/n]: " start_confirm
+        read -r -p "是否立即启动 Xboard-Node？[y/N]: " start_confirm
 
-        if [[ ! "$start_confirm" =~ ^[Nn]$ ]]; then
+        if [[ "$start_confirm" =~ ^[Yy]$ ]]; then
             start_node
-        else
-            yellow "已跳过启动，稍后可在管理菜单中手动启动。"
         fi
         ;;
 
