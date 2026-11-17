@@ -1101,47 +1101,67 @@ backup_all() {
 manage_custom_dns() {
     check_project || return 1
     require_python || return 1
+
     [[ -f "$PROJECT_DIR/config/config.yml" ]] || {
         red "请先完成配置生成。"
         return 1
     }
+
     local kernel
     kernel="$(python3 - "$PROJECT_DIR/config/config.yml" <<'PYK'
 import json,sys
 try:
- d=json.load(open(sys.argv[1],encoding="utf-8"))
- print(str(d.get("kernel",{}).get("type","")).lower())
-except Exception: print("")
+    d=json.load(open(sys.argv[1],encoding="utf-8"))
+    print(str(d.get("kernel",{}).get("type","")).lower())
+except Exception:
+    print("")
 PYK
 )"
+
     [[ "$kernel" == "singbox" ]] || {
         yellow "当前配置不是 Sing-box 内核，自定义 DNS 功能仅适用于 Sing-box。"
         return 1
     }
 
     generate_sing_origin || return 1
+
     python3 - "$PROJECT_DIR/config/config.yml" "$CUSTOM_DNS_ENABLED" <<'PYK'
 import json,sys,os,tempfile
+
 p,enabled=sys.argv[1],sys.argv[2]
 d=json.load(open(p,encoding="utf-8"))
 k=d.setdefault("kernel",{})
+
 if enabled=="yes":
     k["custom_config"]="/etc/xboard-node/sing_origin.json"
 else:
     k.pop("custom_config",None)
+
 fd,tmp=tempfile.mkstemp(prefix=".config.yml.",dir=os.path.dirname(p))
-with os.fdopen(fd,"w",encoding="utf-8") as f:
-    json.dump(d,f,ensure_ascii=False,indent=2); f.write("\n"); f.flush(); os.fsync(f.fileno())
-os.chmod(tmp,0o600); os.replace(tmp,p)
+try:
+    with os.fdopen(fd,"w",encoding="utf-8") as f:
+        json.dump(d,f,ensure_ascii=False,indent=2)
+        f.write("\n")
+        f.flush()
+        os.fsync(f.fileno())
+    os.chmod(tmp,0o600)
+    os.replace(tmp,p)
+except Exception:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+    raise
 PYK
+
     write_compose_file "$CUSTOM_DNS_ENABLED"
+
     compose config -q || {
         red "Compose 校验失败；请检查配置及 DNS 挂载。"
         return 1
     }
-    green "自定义 DNS 配置已同步。"
 
-    echo
+    green "自定义 DNS 配置已同步。"
 
     local expected_dns_source actual_dns_mount container_exists
 
@@ -1156,6 +1176,7 @@ PYK
             "$CONTAINER" 2>/dev/null || true)"
     fi
 
+    echo
     echo "========== Docker DNS 挂载状态 =========="
     echo "容器是否存在：$container_exists"
     echo "当前 DNS 挂载：${actual_dns_mount:-无}"
@@ -1171,15 +1192,15 @@ PYK
 
         if [[ "$actual_dns_mount" == "bind|$expected_dns_source" ]]; then
             blue "检测到容器已经挂载正确的 DNS 文件。"
-            blue "本次仅更新 DNS 内容，执行普通重启……"
+            blue "执行普通重启……"
 
             compose restart "$SERVICE" || {
                 red "DNS 文件已更新，但容器普通重启失败。"
                 return 1
             }
         else
-            yellow "检测到容器 DNS 挂载与目标配置不一致。"
-            yellow "需要强制重建容器，使新的 DNS 文件挂载生效……"
+            yellow "容器 DNS 挂载与目标配置不一致。"
+            yellow "执行强制重建，使 DNS 文件挂载生效……"
 
             compose up -d --force-recreate "$SERVICE" || {
                 red "DNS 配置已更新，但容器强制重建失败。"
@@ -1190,7 +1211,7 @@ PYK
         sleep 2
 
         if ! docker inspect --format '{{.State.Running}}' "$CONTAINER" 2>/dev/null | grep -qx true; then
-            red "容器未正常运行，请检查 docker logs $CONTAINER"
+            red "容器未正常运行，请检查：docker logs $CONTAINER"
             return 1
         fi
 
@@ -1199,7 +1220,7 @@ PYK
             "$CONTAINER" 2>/dev/null || true)"
 
         if [[ "$actual_dns_mount" != "bind|$expected_dns_source" ]]; then
-            red "容器重启后 DNS 挂载验证失败。"
+            red "容器 DNS 挂载验证失败。"
             red "实际挂载：${actual_dns_mount:-无}"
             return 1
         fi
@@ -1210,30 +1231,34 @@ PYK
         fi
 
         green "DNS 配置更新成功！"
-        green "容器运行正常，DNS 挂载正确，文件内容一致。"
+        green "容器运行正常，挂载正确，文件内容一致。"
+
+        echo
         echo "当前 DNS 配置："
         cat "$PROJECT_DIR/sing_origin.json"
 
     else
 
         if [[ -n "$actual_dns_mount" ]]; then
-            yellow "检测到容器仍然挂载旧 DNS 文件。"
-            yellow "正在强制重建容器，移除旧挂载……"
+            yellow "检测到容器仍挂载旧 DNS 文件。"
+            yellow "执行强制重建，移除旧挂载……"
 
             compose up -d --force-recreate "$SERVICE" || {
-                red "自定义 DNS 已关闭，但容器重建失败。"
+                red "关闭 DNS 后容器重建失败。"
                 return 1
             }
+
         elif [[ "$container_exists" == "yes" ]]; then
             blue "容器已经没有 DNS 文件挂载。"
-            blue "仅需普通重启，使关闭 DNS 后的新配置生效……"
+            blue "执行普通重启……"
 
             compose restart "$SERVICE" || {
                 red "容器普通重启失败。"
                 return 1
             }
+
         else
-            yellow "容器尚不存在，正在按关闭 DNS 的配置创建容器……"
+            yellow "容器尚不存在，按关闭 DNS 的配置创建容器……"
 
             compose up -d "$SERVICE" || {
                 red "容器创建失败。"
@@ -1244,7 +1269,7 @@ PYK
         sleep 2
 
         if ! docker inspect --format '{{.State.Running}}' "$CONTAINER" 2>/dev/null | grep -qx true; then
-            red "容器未正常运行，请检查 docker logs $CONTAINER"
+            red "容器未正常运行，请检查：docker logs $CONTAINER"
             return 1
         fi
 
@@ -1253,7 +1278,7 @@ PYK
             "$CONTAINER" 2>/dev/null || true)"
 
         if [[ -n "$actual_dns_mount" ]]; then
-            red "DNS 已关闭，但容器仍然存在 DNS 文件挂载！"
+            red "DNS 已关闭，但容器仍存在 DNS 文件挂载！"
             red "实际挂载：$actual_dns_mount"
             return 1
         fi
