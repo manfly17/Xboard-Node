@@ -1,3 +1,12 @@
+# AKDNS
+
+``` bash
+curl -fsSL https://raw.githubusercontent.com/manfly17/aktools/refs/heads/main/akdns.sh \
+  -o /root/akdns.sh && \
+chmod +x /root/akdns.sh && \
+bash /root/akdns.sh
+```
+
 # Xboard-Node
 
 [Xboard](https://github.com/cedar2025/Xboard) 的节点后端，支持 `sing-box` / `xray-core` 双核心。
