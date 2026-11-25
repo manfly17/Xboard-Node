@@ -58,6 +58,17 @@ ln -sfn /root/xboard-node.sh /usr/local/bin/xbnode &&
 xbnode
 ```
 
+### Linux VPS 系统清理工具
+
+### 安装与运行
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/sys-clean.sh \
+  -o /root/sys-clean.sh && \
+chmod +x /root/sys-clean.sh && \
+bash /root/sys-clean.sh
+```
+
 ### Docker 部署
 
 ```bash
