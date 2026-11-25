@@ -287,7 +287,7 @@ system_cleanup() {
         echo "  - Xboard、AriNode 等项目文件"
     else
         days=3
-        size="100M"
+        size="200M"
 
         echo
         echo "========== 深度清理系统垃圾 =========="
@@ -299,7 +299,7 @@ system_cleanup() {
         echo "  - 过期系统临时文件"
         echo "  - 系统崩溃转储文件"
         echo
-        echo "日志限制：100M"
+        echo "日志限制：200M"
         echo
         echo "不会清理 Docker 数据及业务程序。"
     fi
