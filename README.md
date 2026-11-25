@@ -58,7 +58,7 @@ ln -sfn /root/xboard-node.sh /usr/local/bin/xbnode &&
 xbnode
 ```
 
-### Linux VPS 系统清理工具
+### 系统清理工具
 
 ### 安装与运行
 
