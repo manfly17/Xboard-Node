@@ -1,7 +1,6 @@
 
 #!/usr/bin/env bash
 # Xboard-Node 安装与管理脚本
-# 证书判断增强版：2026-11-17
 # 安装后使用：xbnode
 # 适用：Debian、Ubuntu
 # 依赖：Docker Engine、Docker Compose V2、Python3
@@ -275,7 +274,35 @@ install_project() {
 
 generate_sing_origin() {
     local file="$PROJECT_DIR/sing_origin.json"
-    local answer dns_ip
+    local answer dns_ip current_dns="1.1.1.1"
+
+    # 读取已有配置中的 unlock-dns IP
+    if [[ -s "$file" ]]; then
+        current_dns="$(python3 - "$file" <<'PYDNS_CUR' 2>/dev/null || true
+import json, sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as f:
+        data = json.load(f)
+
+    servers = data.get("dns", {}).get("servers", [])
+    ip = next(
+        (
+            item.get("address")
+            for item in servers
+            if isinstance(item, dict)
+            and item.get("tag") == "unlock-dns"
+            and item.get("address")
+        ),
+        None
+    )
+    print(ip or "1.1.1.1")
+except Exception:
+    print("1.1.1.1")
+PYDNS_CUR
+)"
+        current_dns="${current_dns:-1.1.1.1}"
+    fi
 
     echo
     blue "========== Sing-box 自定义 DNS =========="
@@ -288,8 +315,8 @@ generate_sing_origin() {
         return 0
     fi
 
-    read -r -p "请输入 DNS IP [1.1.1.1]: " dns_ip
-    dns_ip="${dns_ip:-1.1.1.1}"
+    read -r -p "请输入 DNS IP [${current_dns}]: " dns_ip
+    dns_ip="${dns_ip:-$current_dns}"
     backup_file "$file" || return 1
     if ! python3 - "$dns_ip" "$file" <<'PYDNS_5821'
 import sys, json, ipaddress, os, tempfile
