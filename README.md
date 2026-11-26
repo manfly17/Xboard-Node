@@ -7,6 +7,17 @@ chmod +x /root/akdns.sh && \
 bash /root/akdns.sh
 ```
 
+### 系统清理工具
+
+### 安装与运行
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/sys-clean.sh \
+  -o /root/sys-clean.sh && \
+chmod +x /root/sys-clean.sh && \
+bash /root/sys-clean.sh
+```
+
 # Xboard-Node
 
 [Xboard](https://github.com/cedar2025/Xboard) 的节点后端，支持 `sing-box` / `xray-core` 双核心。
@@ -43,7 +54,7 @@ bash /root/install-deps.sh
 #### 下载并安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/xboard-node.sh \
+curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/xboard-node-test.sh \
   -o /root/xboard-node.sh &&
 chmod +x /root/xboard-node.sh &&
 ln -sfn /root/xboard-node.sh /usr/local/bin/xbnode &&
@@ -56,17 +67,6 @@ ln -sfn /root/xboard-node.sh /usr/local/bin/xbnode &&
 
 ```bash
 xbnode
-```
-
-### 系统清理工具
-
-### 安装与运行
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/sys-clean.sh \
-  -o /root/sys-clean.sh && \
-chmod +x /root/sys-clean.sh && \
-bash /root/sys-clean.sh
 ```
 
 ### Docker 部署
