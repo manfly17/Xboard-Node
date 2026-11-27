@@ -9,8 +9,6 @@ bash /root/akdns.sh
 
 ### 系统清理工具
 
-### 安装与运行
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/manfly17/Xboard-Node/refs/heads/dev/sys-clean.sh \
   -o /root/sys-clean.sh && \
@@ -68,6 +66,37 @@ ln -sfn /root/xboard-node.sh /usr/local/bin/xbnode &&
 ```bash
 xbnode
 ```
+
+# 节点协议支持与证书判断说明
+
+Xboard-Node 会根据安装时选择的内核（Xray 或 Sing-box），使用对应的协议支持列表进行判断，并结合节点配置识别是否需要申请 TLS 证书。
+
+| 协议 | Xray | Sing-box | 当前证书判断 |
+| --- | --- | --- | --- |
+| VMess | 支持 | 支持 | 已处理 |
+| VLESS | 支持 | 支持 | 已处理 |
+| Trojan | 支持 | 支持 | 已处理 |
+| Shadowsocks | 支持 | 支持 | 已处理，含插件判断 |
+| SOCKS | 不支持 | 支持 | 已处理 |
+| HTTP | 不支持 | 支持 | 已处理 |
+| WireGuard | 未实现 | 未实现 | 不支持 |
+| TUIC | 不支持 | 支持 | 已处理 |
+| Hysteria 2 | 不支持 | 支持 | 已处理 |
+| AnyTLS | 不支持 | 支持 | 已处理 |
+| Naive | 不支持 | 支持 | 已处理 |
+| Mieru | 不支持 | 支持 | 已处理 |
+
+---
+
+**说明：**
+
+- **支持**：表示当前脚本对应内核支持该协议。
+- **不支持**：表示当前脚本对应内核不支持该协议。
+- **未实现**：表示协议尚未在当前脚本中实现。
+- **已处理**：表示脚本已纳入该协议的证书判断逻辑。
+- **含插件判断**：Shadowsocks 会结合插件配置判断是否涉及 TLS 证书需求。
+
+证书判断会结合节点协议、传输方式及 TLS/REALITY 等相关配置进行识别，而不是仅根据协议名称决定是否申请证书。
 
 ### Docker 部署
 
