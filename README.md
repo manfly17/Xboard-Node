@@ -76,7 +76,7 @@ Xboard-Node 会根据安装时选择的内核（Xray 或 Sing-box），使用对
 | VMess | 支持 | 支持 | 已处理 |
 | VLESS | 支持 | 支持 | 已处理 |
 | Trojan | 支持 | 支持 | 已处理 |
-| Shadowsocks | 支持 | 支持 | 已处理，含插件判断 |
+| Shadowsocks | 支持 | 支持 | 已处理 |
 | SOCKS | 不支持 | 支持 | 已处理 |
 | HTTP | 不支持 | 支持 | 已处理 |
 | WireGuard | 未实现 | 未实现 | 不支持 |
