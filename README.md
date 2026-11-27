@@ -67,7 +67,7 @@ ln -sfn /root/xboard-node.sh /usr/local/bin/xbnode &&
 xbnode
 ```
 
-# 节点协议支持与证书判断说明
+### 节点协议支持与证书判断说明
 
 Xboard-Node 会根据安装时选择的内核（Xray 或 Sing-box），使用对应的协议支持列表进行判断，并结合节点配置识别是否需要申请 TLS 证书。
 
